@@ -5,6 +5,10 @@ contract Escrow {
   modifier bySender(){ require(msg.sender == sender, "Only sender can call this function");  _; }
   modifier ifPaid(){ require(paid, "Payment must have been made");  _; }
   modifier ifUnpaid(){ require(!paid, "Payment must have NOT been made yet"); _;  }
+
+	event Paid();
+	event Refunded();
+	event Cancelled();
   
   address public recepient;
   address public sender;
@@ -51,6 +55,8 @@ contract Escrow {
     
     sender = msg.sender;
     paid = true;
+
+		emit Paid();
   }
 
   function release() public bySender ifPaid{
@@ -62,7 +68,15 @@ contract Escrow {
 
     selfdestruct(recepient);
   }
-  
+
+	/* the recepient can cancel the escrow contract returning any and
+		 all funds to the sender */
+	function cancel() public byRecepient {
+		selfdestruct(sender);
+
+		emit Cancelled();
+	}
+
   function refund() public bySender ifPaid{
     require(now < expiresAt, "The escrow has expired.");
 
@@ -76,6 +90,9 @@ contract Escrow {
       sender.transfer(address(this).balance * insidePeriod3RefundPct/100);
     }
 
+		emit Refunded();
+
     selfdestruct(recepient);
   }
+
 }

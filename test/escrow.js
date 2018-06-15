@@ -76,6 +76,13 @@ contract("Escrow", ([owner, client]) => {
     web3.eth.getBalance(escrow.address).should.be.bignumber.equal(paymentAmount)
   })
 
+  it("emits Paid event", (done)=>{
+    escrow.Paid((err,res)=>{
+      done(err)
+    })
+
+    escrow.sendTransaction({from: client, value: paymentAmount, gasPrice:0})
+  })
 
 
   describe("once paid",()=>{
@@ -154,6 +161,12 @@ contract("Escrow", ([owner, client]) => {
 
       web3.eth.getBalance(owner).should.be.bignumber.equal(ownerBal.add(paymentAmount*(100-p4refund)/100))
       web3.eth.getBalance(client).should.be.bignumber.equal(clientBal.add(paymentAmount*p4refund/100))
+    })
+
+    it("can be cancelled by the recepient, returning full balance to the client", async()=>{
+      await escrow.cancel({from:owner})
+
+      web3.eth.getBalance(client).should.be.bignumber.equal(clientBal.add(paymentAmount))
     })
   })
   
